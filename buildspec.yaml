@@ -1,0 +1,127 @@
+version: 0.2
+
+phases:
+
+  install:
+
+    runtime-versions:
+
+      python: 3.9
+
+    commands:
+
+      - SOURCE_VERSION=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+
+      - pip3 install --upgrade pip
+
+      - pip3 install --upgrade awscli aws-sam-cli
+
+      - pip3 install -r requirements.txt
+
+
+  build:
+
+    commands:
+      - >-
+        echo "Entering build..."
+        echo "Validating artifacts and deploying to ${ENVIRONMENT}"
+        
+        python -m pytest tests/
+        
+        sam validate --template cicd-pipeline/$TEMPLATE
+        
+        "zipping shared utils folder to use in glue scripts"
+        
+        zip -r shared_utils.zip shared_utils
+        
+        aws s3 cp shared_utils.zip s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+        
+        echo "Moving to Function folder to copy Glue Scripts" 
+
+        zip -r lambda_layer.zip python
+
+        aws s3 cp lambda_layer.zip s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        cd configurations/
+        
+        aws s3 cp order_lines_logic.json s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/configurations/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+        
+        aws s3 cp snecma_logic.json s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/configurations/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+        
+        cd ../functions/
+        
+        aws s3 cp box_raw.py s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+        
+        aws s3 cp cp_raw.py s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        aws s3 cp cp_raw_conditional.py s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        aws s3 cp data_quality.py s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        aws s3 cp data_quality_processed.py s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        aws s3 cp dimension.py s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+      
+        zip -r execute_redshift.zip execute_redshift.py
+
+        aws s3 cp execute_redshift.zip s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        aws s3 cp foundation_report_table.py s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        zip -r object_redshift.zip object_redshift.py
+
+        aws s3 cp object_redshift.zip s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+        
+        aws s3 cp mirror.py s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        aws s3 cp redshift_raw.py s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+        
+        aws s3 cp smartsheet_raw.py s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+        
+        zip -r success_email_lambda.zip success_email_lambda.py
+        
+        aws s3 cp success_email_lambda.zip s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        zip -r snc_lambda_code.zip snc_lambda_code.py
+        
+        aws s3 cp snc_lambda_code.zip s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        zip -r sales_email.zip sales_email.py
+
+        aws s3 cp sales_email.zip s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/functions/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        echo "Moving to Statemachines folder to copy step function scripts"
+        
+        cd ../statemachines/
+
+        aws s3 cp dataquality-layer-load.asl.json s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/statemachines/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        aws s3 cp dimension-layer-load.asl.json s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/statemachines/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+        
+        aws s3 cp raw-layer-load.asl.json s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/statemachines/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+        
+        aws s3 cp mirror-layer-load.asl.json s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/statemachines/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+        
+        aws s3 cp flatfile-layer-load.asl.json s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/statemachines/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        aws s3 cp orchestration.asl.json s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/statemachines/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        aws s3 cp sales-email-layer-load.asl.json s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/artifacts/statemachines/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        echo "Moving to cicd-pipeline folder"
+        
+        cd ../cicd-pipeline/
+        
+        echo "Packaging template"
+        
+        aws cloudformation package --template-file $TEMPLATE --output-template-file ${GIT_REPO}.yaml --s3-bucket $CICD_BUCKET --s3-prefix ${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}
+
+        echo "Zipping compiled templates and config file"
+
+        zip -r template.zip ${GIT_REPO}.yaml template_configs_${ENVIRONMENT}.json
+        
+        echo "storing compiled template in S3..."
+        
+        aws s3 cp template.zip s3://${CICD_BUCKET}/${APP_PREFIX}-${GIT_REPO}/${ENVIRONMENT}/ --sse aws:kms --sse-kms-key-id $CODEBUILD_KMS_KEY_ID
+
+        echo "Deploy via Code pipeline..."
