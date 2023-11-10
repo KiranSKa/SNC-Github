@@ -1,0 +1,41 @@
+{
+  "Parameters" : {
+	"ApplicationName" : "spares",
+	"BoxRawGlueJobName": "box_raw",
+	"DataQualityStateMachineName": "dataquality-layer-load",
+	"DimensionStateMachineName": "dimension-layer-load",
+	"DimensionLoadJobName": "dimension",
+	"DOSRawJobName": "redshift_raw",
+	"DQMirrorJobName": "data_quality",
+	"DQProcessedJobName":"data_quality_processed",
+	"Env" : "np",
+	"ExecuteRedshiftLambda": "execute_redshift",
+	"FlatfileStateMachineName" : "flatfile-layer-load",
+	"FoundationReportTableName": "foundation_report_table",
+	"GlueLogs": "glue-logs",
+	"LambdaLayerName": "lambda_layer",
+	"LoadSummaryEmailLambda" : "ingestion-count-status",
+	"MirrorJobName": "mirror",
+	"MirrorStateMachineName": "mirror-layer-load",
+	"ObjectRedshiftLambda": "object_redshift",
+	"OracleRawConditionalGlueJobName": "cp_raw_conditional",
+	"OracleRawGlueJobName": "cp_raw",
+	"orchestrationStateMachineName" : "orchestration",
+	"OrganizationName" : "cms",
+	"RawLoadStateMachineName" : "raw-layer-load",
+	"SalesEmail" : "sales-email",
+	"SalesEmailStateMachineName": "sales-email-layer-load",
+	"SecurityGroupGeneral": "sg-0136e9108e0fb5a51",
+	"SecurityGroupRDS": "sg-07a14603c3c2468e6",
+	"ServiceNowLambda": "snc_lambda_code",
+	"SmartsheetRawJobName": "smartsheet_raw",
+	"UAI" : "UAI1005419",
+	"VPCSubnet": "subnet-0cefe79640c05660d"
+  },
+    "Tags" : {
+    "env" : "np",
+	"uai" : "UAI1005419",
+	"Name" : "cms-spares",
+	"owner" : "cms-spares"
+  }
+}
